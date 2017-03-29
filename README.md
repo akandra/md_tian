@@ -4,6 +4,7 @@ md_tian
 md_tian (Molecular Dynamics Xia Tian) is a program for sumulating the scattering of atoms (and molecules) 
 from a surface. 
 
+rpmd
 Source code is in Fortran.
 List of modules:
 
