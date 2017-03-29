@@ -72,6 +72,7 @@ module atom_class
     type atoms
         integer                                :: n_atoms  ! number of atoms
         integer                                :: nofix    ! number of non-fixed atoms
+        integer                                :: n_beads  ! number of bids per atom
         real(8), dimension(:),   allocatable   :: dens     ! embedded electron density
         real(8), dimension(:,:), allocatable   :: r        ! positions
         real(8), dimension(:,:), allocatable   :: v        ! velocities
