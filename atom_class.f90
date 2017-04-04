@@ -52,14 +52,16 @@ module atom_class
     !       mass array has length of n_atoms
     type atoms
 
-        integer                                 :: n_atoms  ! number of atoms
-        integer                                 :: n_beads  ! number of beads per atom
-        real(dp), dimension(:),     allocatable :: m        ! mass
-        real(dp), dimension(:,:,:), allocatable :: r        ! positions
-        real(dp), dimension(:,:,:), allocatable :: v        ! velocities
-        real(dp), dimension(:,:,:), allocatable :: f        ! forces
-        logical,  dimension(:,:,:), allocatable :: fixed    ! mask array defining frozen atoms
-                                                            !  T is frozen
+        integer                                     :: n_atoms  ! number of atoms
+        integer                                     :: n_beads  ! number of beads per atom
+        real(dp), dimension(:),         allocatable :: m        ! mass
+        integer,  dimension(:),         allocatable :: atn      ! atomic number
+        character(len=3), dimension(:), allocatable :: name     ! atomic name
+        real(dp), dimension(:,:,:),     allocatable :: r        ! positions
+        real(dp), dimension(:,:,:),     allocatable :: v        ! velocities
+        real(dp), dimension(:,:,:),     allocatable :: f        ! forces
+        logical,  dimension(:,:,:),     allocatable :: fixed    ! mask array defining frozen atoms
+                                                                !  T is frozen
 
     end type atoms
 
@@ -82,6 +84,8 @@ contains
         type(atoms) new_atoms
 
         allocate(new_atoms%m(n_atoms))
+        allocate(new_atoms%atn(n_atoms))
+        allocate(new_atoms%name(n_atoms))
         allocate(new_atoms%r(3,n_beads,n_atoms))
         allocate(new_atoms%v(3,n_beads,n_atoms))
         allocate(new_atoms%f(3,n_beads,n_atoms))
@@ -90,6 +94,8 @@ contains
         new_atoms%n_beads = n_beads       !   initialize
         new_atoms%n_atoms = n_atoms
         new_atoms%m     = -1.0_dp
+        new_atoms%atn   = 0
+        new_atoms%name  = ""
         new_atoms%r     = 0.0_dp
         new_atoms%v     = 0.0_dp
         new_atoms%f     = 0.0_dp

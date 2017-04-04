@@ -14,14 +14,14 @@ program md_tian
 
 
 use atom_class
+use md_init
 
 implicit none
 
-type(atoms) :: test
+type(atoms) :: slab, teil
 
-test=atoms(n_beads=2, n_atoms=3)
 
-print*, test
+call simbox_init(slab, teil)
 
 
 
