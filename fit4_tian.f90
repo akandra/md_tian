@@ -328,7 +328,7 @@ subroutine dev2aimddft(Eref, mm)
 !           For comparison between input AIMD and new fit.
 !
 real(8), intent(in) :: Eref, mm
-real(8) :: energy,sumsq = 0.0d0,sum1 = 0.0d0,c44= 0.0d0,c12=0.0d0, c11=0.0d0
+real(8) :: beta, energy,sumsq = 0.0d0,sum1 = 0.0d0,c44= 0.0d0,c12=0.0d0, c11=0.0d0
 character(len=80) :: pos_l_p, energy_l_p
 integer :: i, q, npts, col = 0
 character(len=1) :: str
@@ -501,7 +501,7 @@ subroutine restricted_fit(ip, ib) ! This does not work.
     integer                 :: ip
     integer, dimension(20)  :: ib
     integer                 :: j
-    real(8) :: thresh, randomnumber, other_randomnumber, third_randomnumber
+    real(8) :: beta, thresh, randomnumber, other_randomnumber, third_randomnumber
 
     ! Create random numbers here.
     randomnumber = ran1()*3

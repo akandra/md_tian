@@ -36,7 +36,7 @@ module atom_class
 
     ! geometrical factor for fcc metals
     ! beta = (16 Pi / 3)^(1/3)/Sqrt(2)
-    real(8), parameter          :: beta     = 1.8093997906d0
+!    real(8), parameter          :: beta     = 1.8093997906d0
 
     ! Number of nearest, next-nearest and next-next-nearest neighbours
     ! fcc only. MODIFY FOR NON-FCC-METALS

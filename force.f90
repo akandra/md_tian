@@ -11,11 +11,11 @@ module force
     !
     ! Date          	Author          	History of Revison
     ! ====          	======          	==================
-    ! 04.04.2017	Nils Hertl		generalize EMT to bcc metals
-    !			Sascha Kandratsenka
-    ! 18.02.2014    	Svenja M. Janke		Original
-    !			Sascha Kandratsenka
-    !			Dan J. Auerbach
+    ! 04.04.2017	Nils Hertl		        generalize EMT to bcc metals
+    !			    Sascha Kandratsenka
+    ! 18.02.2014    Svenja M. Janke		    Original
+    !			    Sascha Kandratsenka
+    !			    Dan J. Auerbach
     !
     use atom_class
     use md_init
@@ -23,6 +23,9 @@ module force
     implicit none
     save
     integer, private, dimension(3), parameter   :: b       = (/12, 6, 24/)
+    ! geometrical factor for fcc metals
+    ! beta = (16 Pi / 3)^(1/3)/Sqrt(2)
+!    real(8), parameter          :: beta     = 1.8093997906d0
 
 contains
 
@@ -36,7 +39,7 @@ subroutine emt(slab, teil)
     type(atoms), intent(inout)    :: teil, slab
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -476,7 +479,7 @@ subroutine emt_e(slab, teil)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -737,7 +740,7 @@ subroutine emt1(s)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1l, igamma2l
     real(8) :: V_ll, Ecoh_l, vref_l
@@ -924,7 +927,7 @@ subroutine emt1_e(s)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1, temp
     real(8) :: igamma1l, igamma2l
     real(8) :: V_ll, Ecoh_l, vref_l
@@ -936,6 +939,22 @@ subroutine emt1_e(s)
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
 
+! geometrical factor for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
+
+print*, structure_key, beta
+stop
     ! beta * s0
     betas0_l = beta * pars_l(7)
     ! beta * eta2
@@ -1060,7 +1079,7 @@ subroutine emt_e_fit(xdata, energy)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -1309,7 +1328,7 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -1837,7 +1856,7 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -2094,7 +2113,7 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -2559,7 +2578,7 @@ subroutine emt1nn(s)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1l, igamma2l
     real(8) :: V_ll, Ecoh_l, vref_l
@@ -2821,7 +2840,7 @@ subroutine ldfa(s,imass)
     end do
     ! xi in 1/fs
     s%dens = s%dens*convert*imass / hbar
-    
+
     ! For simulated annealing, the Langevin dynamics are used as a heat bath
     ! But using the Au-atomic densities is too inefficient, so in this case
     ! a friction coefficient is set that is of the order of magnitude of
