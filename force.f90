@@ -11,6 +11,8 @@ module force
     !
     ! Date          	Author          	History of Revison
     ! ====          	======          	==================
+    ! 04.04.2017	Nils Hertl		generalize EMT to bcc metals
+    !			Sascha Kandratsenka
     ! 18.02.2014    	Svenja M. Janke		Original
     !			Sascha Kandratsenka
     !			Dan J. Auerbach
