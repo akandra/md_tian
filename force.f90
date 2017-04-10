@@ -21,11 +21,6 @@ module force
     use md_init
 
     implicit none
-    save
-    integer, private, dimension(3), parameter   :: b       = (/12, 6, 24/)
-    ! geometrical factor for fcc metals
-    ! beta = (16 Pi / 3)^(1/3)/Sqrt(2)
-!    real(8), parameter          :: beta     = 1.8093997906d0
 
 contains
 
@@ -38,6 +33,8 @@ subroutine emt(slab, teil)
 
     type(atoms), intent(inout)    :: teil, slab
     integer :: i,j
+
+    integer, dimension(3) :: b
 
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
@@ -479,6 +476,8 @@ subroutine emt_e(slab, teil)
 
     integer :: i,j
 
+    integer, dimension(3) :: b
+
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
@@ -740,6 +739,8 @@ subroutine emt1(s)
 
     integer :: i,j
 
+    integer, dimension(3) :: b
+
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1l, igamma2l
@@ -927,6 +928,8 @@ subroutine emt1_e(s)
 
     integer :: i,j
 
+    integer, dimension(3) :: b
+
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1, temp
     real(8) :: igamma1l, igamma2l
@@ -953,8 +956,6 @@ subroutine emt1_e(s)
 
     end select
 
-print*, structure_key, beta
-stop
     ! beta * s0
     betas0_l = beta * pars_l(7)
     ! beta * eta2
@@ -964,8 +965,20 @@ stop
 
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+
+    end select
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -975,12 +988,25 @@ stop
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
 
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4 * rcut / (sqrt3 + 2.0d0)
-    acut = 9.210240d0/(rr -rcut) ! ln(10000)
+    rcut = rnnl(3)
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
+    acut = 9.210240d0/(rr -rcut) ! ln(10000)
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
+
 
 !-----------------------------------GAMMA--------------------------------------
 ! Gamma enforces the cut-off together with theta (see below)
@@ -1035,14 +1061,14 @@ stop
 
         end do
     end do
-            close(124)
+
     ! divide by cut-off scaling factors
     sigma_ll = sigma_ll*igamma1l
     V_ll     =     V_ll*igamma2l*pars_l(5)
 
 !-----------------------------NEUTRAL SPHERE RADIUS----------------------------
 
-    s_l = -log(sigma_ll*twelfth)/betaeta2_l
+    s_l = -log(sigma_ll/dble(b(1)))/betaeta2_l
 
 
 !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
@@ -1056,12 +1082,17 @@ stop
 
 !----------------REFERENCE PAIR POTENTIAL CONTRIBUTIONS------------------------
 
-    vref_l = 12.0d0*pars_l(5)*sum(exp(-pars_l(6)*s_l))
+    vref_l = b(1)*pars_l(5)*sum(exp(-pars_l(6)*s_l))
 
 
 !-------------------------------TOTAL ENERGY---------------------------------
 
     Epot = Ecoh_l - V_ll + 0.50d0*vref_l
+
+
+print*, structure_key, vref_l, Epot
+stop
+
 
     deallocate(s_l, sigma_ll)
 
@@ -1078,6 +1109,8 @@ subroutine emt_e_fit(xdata, energy)
 
 
     integer :: i,j
+
+    integer, dimension(3) :: b
 
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
@@ -1327,6 +1360,8 @@ subroutine emt_de_fit(xdata, energy, denergy)
                                                         ! and so.
 
     integer :: i,j
+
+    integer, dimension(3) :: b
 
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
@@ -1856,6 +1891,8 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
     integer :: i,j
 
+    integer, dimension(3) :: b
+
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
@@ -2112,6 +2149,8 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
                                                         ! and so.
 
     integer :: i,j
+
+    integer, dimension(3) :: b
 
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
@@ -2577,6 +2616,8 @@ subroutine emt1nn(s)
     type(atoms), intent(inout)    :: s
 
     integer :: i,j
+
+    integer, dimension(3) :: b
 
     real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
