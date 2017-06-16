@@ -1,0 +1,6 @@
+ - md_tian mit EMT ansehen + Manual
+ - RuNNer mit NN ansehen + Manual (uni bochum link)
+ - GitHub + Manual
+ - Converter von VASP nach NN (Marvin) ansehen
+ - paper zu: NN, EMT, 
+ - Manuals: VASP, AIMD, FHI-AIMS, Fortran, Python, md tian, RuNNer, Git
