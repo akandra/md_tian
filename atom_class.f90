@@ -15,8 +15,10 @@ module atom_class
 
     ! Various useful constants
     real(8), parameter          :: sqrt2    = 1.41421356237d0
-    real(8), parameter          :: isqrt2   = 0.7071067811865d0
     real(8), parameter          :: sqrt3    = 1.73205080757d0
+    real(8), parameter          :: sqrt11   = sqrt(11.d0)
+    real(8), parameter          :: isqrt2   = 0.7071067811865d0
+    real(8), parameter          :: isqrt3   = 1.d0/sqrt3
     real(8), parameter          :: pi       = 3.14159265359d0
     real(8), parameter          :: kB       = 8.61733238496d-5
     real(8), parameter          :: hbar     = 0.6582119280967d0
@@ -36,7 +38,7 @@ module atom_class
 
     ! geometrical factor for fcc metals
     ! beta = (16 Pi / 3)^(1/3)/Sqrt(2)
-    real(8), parameter          :: beta     = 1.8093997906d0
+!    real(8), parameter          :: beta     = 1.8093997906d0
 
     ! Number of nearest, next-nearest and next-next-nearest neighbours
     ! fcc only. MODIFY FOR NON-FCC-METALS

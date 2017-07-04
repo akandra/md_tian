@@ -11,16 +11,16 @@ module force
     !
     ! Date          	Author          	History of Revison
     ! ====          	======          	==================
-    ! 18.02.2014    	Svenja M. Janke		Original
-    !			Sascha Kandratsenka
-    !			Dan J. Auerbach
+    ! 04.04.2017	Nils Hertl		        generalize EMT to bcc metals
+    !			    Sascha Kandratsenka
+    ! 18.02.2014    Svenja M. Janke		    Original
+    !			    Sascha Kandratsenka
+    !			    Dan J. Auerbach
     !
     use atom_class
     use md_init
 
     implicit none
-    save
-    integer, private, dimension(3), parameter   :: b       = (/12, 6, 24/)
 
 contains
 
@@ -34,7 +34,9 @@ subroutine emt(slab, teil)
     type(atoms), intent(inout)    :: teil, slab
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -58,6 +60,22 @@ subroutine emt(slab, teil)
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
 
+! geometrical factor for metals
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
+
+
+
+
     ! beta * s0
     betas0_l = beta * pars_l(7)
     betas0_p = beta * pars_p(7)
@@ -73,12 +91,29 @@ subroutine emt(slab, teil)
     chipl = 1.0d0 / chilp
 
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
-    rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
-    rnnp(1) = betas0_p
-    rnnp(2) = rnnp(1) * sqrt2
-    rnnp(3) = rnnp(1) * sqrt3
+
+      rnnl(1) = betas0_l
+      rnnp(1) = betas0_p
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+            rnnp(2) = rnnp(1) * sqrt2
+            rnnp(3) = rnnp(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(3) = rnnp(2) * sqrt2
+
+    end select
+
+
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -87,14 +122,33 @@ subroutine emt(slab, teil)
 ! We use the distance to the next-next-nearest neighbours as cut-off.
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
+    rcut = rnnl(3)
 
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4 * rcut / (sqrt3 + 2.0d0)
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
+
+
+!    rcut = betas0_l * sqrt3                                    - old version
+!    !rcut = a_lat * sqrt3 * isqrt2
+!    rr = 4 * rcut / (sqrt3 + 2.0d0)                            - old version
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xp = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnp-rcut)))
+!    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))         - old version
+!    xp = b * twelfth / (1.0d0 + exp(acut*(rnnp-rcut)))         - old version
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
-    xp = b * twelfth / (1.0d0 + exp(acut*(rnnp-rcut)))
 
 !-----------------------------------GAMMA--------------------------------------
 ! Gamma enforces the cut-off together with theta (see below)
@@ -364,8 +418,11 @@ subroutine emt(slab, teil)
 
     end do
 
-    s_l = -log(s_l*twelfth)/betaeta2_l
-    s_p = -log(s_p*twelfth)/betaeta2_p
+     s_l = -log(s_l/dble(b(1)))/betaeta2_l
+     s_p = -log(s_p/dble(b(1)))/betaeta2_p
+
+     !s_l = -log(s_l*twelfth)/betaeta2_l                - old version
+     !s_p = -log(s_p*twelfth)/betaeta2_p                - old version
 
 !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
 
@@ -432,12 +489,14 @@ subroutine emt(slab, teil)
 
     end do
 
-    rtemp = 12.0d0 * pars_l(5)
+    rtemp = b(1) * pars_l(5)
+    !rtemp = 12.0d0 * pars_l(5)             - old version
     vref_l    =    vref_l*rtemp
     dvref_l_l = dvref_l_l*rtemp*pars_l(6)
     dvref_l_p = dvref_l_p*rtemp*pars_l(6)
 
-    rtemp = 12.0d0 * pars_p(5)
+    rtemp = b(1) * pars_p(5)
+    !rtemp = 12.0d0 * pars_p(5)             - old version
     vref_p    =    vref_p*rtemp
     dvref_p_l = dvref_p_l*rtemp*pars_p(6)
     dvref_p_p = dvref_p_p*rtemp*pars_p(6)
@@ -462,6 +521,8 @@ subroutine emt(slab, teil)
     deallocate(dsigma_pp, dsigma_ll)
     deallocate( s_p,  s_l,  sigma_pl,  sigma_lp, sigma_pp,  sigma_ll)
 
+
+
 end subroutine emt
 
 subroutine emt_e(slab, teil)
@@ -474,7 +535,9 @@ subroutine emt_e(slab, teil)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -488,6 +551,21 @@ subroutine emt_e(slab, teil)
 
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
+
+   !geometrical factors for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
+
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -505,11 +583,30 @@ subroutine emt_e(slab, teil)
 
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
     rnnp(1) = betas0_p
-    rnnp(2) = rnnp(1) * sqrt2
-    rnnp(3) = rnnp(1) * sqrt3
+
+        select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+            rnnp(2) = rnnp(1) * sqrt2
+            rnnp(3) = rnnp(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(3) = rnnp(2) * sqrt2
+
+    end select
+
+    !rnnl(2) = rnnl(1) * sqrt2          - old version
+    !rnnl(3) = rnnl(1) * sqrt3          - old version
+    !rnnp(2) = rnnp(1) * sqrt2          - old version
+    !rnnp(3) = rnnp(1) * sqrt3          - old version
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -519,13 +616,28 @@ subroutine emt_e(slab, teil)
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
 
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4 * rcut / (sqrt3 + 2.0d0)
+       rcut = rnnl(3)
+
+       select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
+
+
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
-    xp = b * twelfth / (1.0d0 + exp(acut*(rnnp-rcut)))
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xp = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnp-rcut)))
 
 !-----------------------------------GAMMA--------------------------------------
 ! Gamma enforces the cut-off together with theta (see below)
@@ -682,8 +794,8 @@ subroutine emt_e(slab, teil)
 
     s_l = sigma_ll + chilp*sigma_lp
     s_p = sigma_pp + chipl*sigma_pl
-    s_l = -log(s_l*twelfth)/betaeta2_l
-    s_p = -log(s_p*twelfth)/betaeta2_p
+    s_l = -log(s_l/dble(b(1)))/betaeta2_l
+    s_p = -log(s_p/dble(b(1)))/betaeta2_p
 
 !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
 
@@ -710,9 +822,9 @@ subroutine emt_e(slab, teil)
         vref_p = vref_p + rtemp
     end do
 
-    rtemp = 12.0d0 * pars_l(5)
+    rtemp = b(1) * pars_l(5)
     vref_l    =    vref_l*rtemp
-    rtemp = 12.0d0 * pars_p(5)
+    rtemp = b(1) * pars_p(5)
     vref_p    =    vref_p*rtemp
 
 
@@ -735,7 +847,9 @@ subroutine emt1(s)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1l, igamma2l
     real(8) :: V_ll, Ecoh_l, vref_l
@@ -750,6 +864,21 @@ subroutine emt1(s)
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
 
+   ! geometrical factor for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
+
+
     ! beta * s0
     betas0_l = beta * pars_l(7)
     ! beta * eta2
@@ -759,8 +888,22 @@ subroutine emt1(s)
 
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
+
+        select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+
+    end select
+
+
 
 
 !------------------------------------------------------------------------------
@@ -771,12 +914,28 @@ subroutine emt1(s)
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
 
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4 * rcut / (sqrt3 + 2.0d0)
+
+        rcut = rnnl(3)
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
+
+
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
 
 !-----------------------------------GAMMA--------------------------------------
 ! Gamma enforces the cut-off together with theta (see below)
@@ -864,7 +1023,7 @@ subroutine emt1(s)
         ds_l_l(3,i,:) = ds_l_l(3,i,:)/(betaeta2_l*s_l)
     end do
 
-    s_l = -log(s_l*twelfth)/betaeta2_l
+    s_l = -log(s_l/dble(b(1)))/betaeta2_l
 
 !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
 
@@ -894,7 +1053,7 @@ subroutine emt1(s)
 
     end do
 
-    rtemp = 12.0d0 * pars_l(5)
+    rtemp = b(1) * pars_l(5)
     vref_l    =    vref_l*rtemp
     dvref_l_l = dvref_l_l*rtemp*pars_l(6)
 
@@ -922,7 +1081,9 @@ subroutine emt1_e(s)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1, temp
     real(8) :: igamma1l, igamma2l
     real(8) :: V_ll, Ecoh_l, vref_l
@@ -934,6 +1095,23 @@ subroutine emt1_e(s)
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
 
+! geometrical factor for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
+
+
+
+
     ! beta * s0
     betas0_l = beta * pars_l(7)
     ! beta * eta2
@@ -943,8 +1121,20 @@ subroutine emt1_e(s)
 
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+
+    end select
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -954,12 +1144,29 @@ subroutine emt1_e(s)
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
 
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4 * rcut / (sqrt3 + 2.0d0)
+    rcut = rnnl(3)
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
+
+
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
+
+
 
 !-----------------------------------GAMMA--------------------------------------
 ! Gamma enforces the cut-off together with theta (see below)
@@ -968,6 +1175,7 @@ subroutine emt1_e(s)
     r3temp = rnnl - betas0_l
     igamma1l = 1.0d0 / sum(xl*exp(   -pars_l(1) * r3temp))
     igamma2l = 1.0d0 / sum(xl*exp(-kappadbeta_l * r3temp))
+
 
 !------------------------------------------------------------------------------
 !                          Sigma and Pair-wise Contributions
@@ -1014,14 +1222,14 @@ subroutine emt1_e(s)
 
         end do
     end do
-            close(124)
+
     ! divide by cut-off scaling factors
     sigma_ll = sigma_ll*igamma1l
     V_ll     =     V_ll*igamma2l*pars_l(5)
 
 !-----------------------------NEUTRAL SPHERE RADIUS----------------------------
 
-    s_l = -log(sigma_ll*twelfth)/betaeta2_l
+    s_l = -log(sigma_ll/dble(b(1)))/betaeta2_l
 
 
 !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
@@ -1035,12 +1243,17 @@ subroutine emt1_e(s)
 
 !----------------REFERENCE PAIR POTENTIAL CONTRIBUTIONS------------------------
 
-    vref_l = 12.0d0*pars_l(5)*sum(exp(-pars_l(6)*s_l))
+    vref_l = b(1)*pars_l(5)*sum(exp(-pars_l(6)*s_l))
 
 
 !-------------------------------TOTAL ENERGY---------------------------------
 
     Epot = Ecoh_l - V_ll + 0.50d0*vref_l
+
+
+
+
+
 
     deallocate(s_l, sigma_ll)
 
@@ -1058,7 +1271,9 @@ subroutine emt_e_fit(xdata, energy)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -1072,6 +1287,20 @@ subroutine emt_e_fit(xdata, energy)
 
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
+
+   ! geometrical factor for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -1089,11 +1318,26 @@ subroutine emt_e_fit(xdata, energy)
 
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
     rnnp(1) = betas0_p
-    rnnp(2) = rnnp(1) * sqrt2
-    rnnp(3) = rnnp(1) * sqrt3
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+            rnnp(2) = rnnp(1) * sqrt2
+            rnnp(3) = rnnp(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(3) = rnnp(2) * sqrt2
+
+    end select
+
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -1103,13 +1347,30 @@ subroutine emt_e_fit(xdata, energy)
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
     !a_lat = 4.2010d0
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
+
+    rcut = rnnl(3)
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
+
+
+
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
-    xp = b * twelfth / (1.0d0 + exp(acut*(rnnp-rcut)))
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xp = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnp-rcut)))
 
 !-----------------------------------GAMMA--------------------------------------
 ! Gamma enforces the cut-off together with theta (see below)
@@ -1256,8 +1517,8 @@ subroutine emt_e_fit(xdata, energy)
 
     s_l = sigma_ll + chilp*sigma_lp
     s_p = sigma_pp + chipl*sigma_pl
-    s_l = -log(s_l*twelfth)/betaeta2_l
-    s_p = -log(s_p*twelfth)/betaeta2_p
+    s_l = -log(s_l/dble(b(1)))/betaeta2_l
+    s_p = -log(s_p/dble(b(1)))/betaeta2_p
 
 !---------------------------COHESIVE FUNCTION-----------------------------------
 
@@ -1276,9 +1537,9 @@ subroutine emt_e_fit(xdata, energy)
         vref_p = vref_p + rtemp
     end do
 
-    rtemp = 12.0d0 * pars_l(5)
+    rtemp = b(1) * pars_l(5)
     vref_l    =    vref_l*rtemp
-    rtemp = 12.0d0 * pars_p(5)
+    rtemp = b(1) * pars_p(5)
     vref_p    =    vref_p*rtemp
 
 
@@ -1307,7 +1568,9 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -1345,6 +1608,20 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
+ ! geometrical factor for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
+
     ! beta * s0
     betas0_l = beta * pars_l(7)
     betas0_p = beta * pars_p(7)
@@ -1372,16 +1649,40 @@ subroutine emt_de_fit(xdata, energy, denergy)
     dchipl(3) =  chipl * 0.5d0/bohr2ang ! d chipl / d sop
     dchipl(4) = -dchipl(3)              ! d chipl / d sol
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
-    rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
-    rnnp(1) = betas0_p
-    rnnp(2) = rnnp(1) * sqrt2
-    rnnp(3) = rnnp(1) * sqrt3
 
+    rnnl(1) = betas0_l
+    rnnp(1) = betas0_p
     drnn(1) = beta
-    drnn(2) = drnn(1) * sqrt2
-    drnn(3) = drnn(1) * sqrt3
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+            rnnp(2) = rnnp(1) * sqrt2
+            rnnp(3) = rnnp(1) * sqrt3
+            drnn(2) = drnn(1) * sqrt2
+            drnn(3) = drnn(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(3) = rnnp(2) * sqrt2
+            drnn(2) = drnn(1) * 2.d0 * isqrt3
+            drnn(3) = drnn(2) * sqrt2
+
+    end select
+
+
+
+
+
+
+
+
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -1391,13 +1692,26 @@ subroutine emt_de_fit(xdata, energy, denergy)
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
 
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4 * rcut / (sqrt3 + 2.0d0)
+        rcut = rnnl(3)
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
-    xp = b * twelfth / (1.0d0 + exp(acut*(rnnp-rcut)))
+    xl = dble(b)/dble(b(1))  / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xp = dble(b)/dble(b(1))  / (1.0d0 + exp(acut*(rnnp-rcut)))
     dxl = -xl*acut*drnn*exp(acut*(rnnl-rcut))/(1.0d0 + exp(acut*(rnnl-rcut)))
     dxp = -xp*acut*drnn*exp(acut*(rnnp-rcut))/(1.0d0 + exp(acut*(rnnp-rcut)))
 
@@ -1708,7 +2022,7 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
     s_l = sigma_ll + chilp*sigma_lp
     rn_ltemp = 1.0d0/(s_l*betaeta2_l)
-    s_l = -log(s_l*twelfth)/betaeta2_l
+    s_l = -log(s_l/dble(b(1)))/betaeta2_l
 
     ! Derivative with respect to l
     ds_l_l(1,:) = -s_l/pars_l(1) &
@@ -1722,7 +2036,7 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
     s_p = sigma_pp + chipl*sigma_pl
     rn_ptemp = 1.0d0 / (s_p*betaeta2_p)
-    s_p = -log(s_p*twelfth)/betaeta2_p
+    s_p = -log(s_p/dble(b(1)))/betaeta2_p
 
     ! Derivative with respect to p
     ds_p_p(1,:) = -s_p/pars_p(1) &
@@ -1764,13 +2078,13 @@ subroutine emt_de_fit(xdata, energy, denergy)
 !----------------REFERENCE PAIR POTENTIAL CONTRIBUTIONS------------------------
 
     rn_ltemp = exp( -pars_l(6) * s_l)
-    rtemp = -12.0d0 * pars_l(5) * pars_l(6)
-    vref_l = 12.0d0 * pars_l(5) * sum(rn_ltemp)
+    rtemp = -b(1)* pars_l(5) * pars_l(6)
+    vref_l = b(1) * pars_l(5) * sum(rn_ltemp)
     ! Derivative with respect to l
         dvref_l_l(1) = rtemp*sum(rn_ltemp*ds_l_l(1,:))
         dvref_l_l(2) = rtemp*sum(rn_ltemp*ds_l_l(2,:))
         dvref_l_l(5) = vref_l/pars_l(5)
-        dvref_l_l(6) = - 12.0d0 * pars_l(5) * sum(rn_ltemp *s_l)
+        dvref_l_l(6) = - b(1) * pars_l(5) * sum(rn_ltemp *s_l)
         dvref_l_l(7) = rtemp*sum(rn_ltemp*ds_l_l(7,:))
         ! Derivative with respect to p
         dvref_l_p(1) = rtemp*sum(rn_ltemp*ds_l_p(1,:))
@@ -1778,13 +2092,13 @@ subroutine emt_de_fit(xdata, energy, denergy)
         dvref_l_p(7) = rtemp*sum(rn_ltemp*ds_l_p(7,:))
 
     rn_ptemp = exp( -pars_p(6) * s_p)
-    rtemp = -12.0d0 * pars_p(5) * pars_p(6)
-    vref_p = 12.0d0 * pars_p(5) * sum(rn_ptemp)
+    rtemp = -b(1) * pars_p(5) * pars_p(6)
+    vref_p = b(1) * pars_p(5) * sum(rn_ptemp)
     ! Derivative with respect to l
         dvref_p_p(1) = rtemp*sum(rn_ptemp*ds_p_p(1,:))
         dvref_p_p(2) = rtemp*sum(rn_ptemp*ds_p_p(2,:))
         dvref_p_p(5) = vref_p/pars_p(5)
-        dvref_p_p(6) = - 12.0d0 * pars_p(5) * sum(rn_ptemp *s_p)
+        dvref_p_p(6) = - b(1) * pars_p(5) * sum(rn_ptemp *s_p)
         dvref_p_p(7) = rtemp*sum(rn_ptemp*ds_p_p(7,:))
         ! Derivative with respect to p
         dvref_p_l(1) = rtemp*sum(rn_ptemp*ds_p_l(1,:))
@@ -1835,7 +2149,9 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -1850,6 +2166,20 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
+
+! geometrical factor for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -1867,11 +2197,28 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
     rnnp(1) = betas0_p
-    rnnp(2) = rnnp(1) * sqrt2
-    rnnp(3) = rnnp(1) * sqrt3
+
+        select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+            rnnp(2) = rnnp(1) * sqrt2
+            rnnp(3) = rnnp(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(3) = rnnp(2) * sqrt2
+    end select
+
+
+
+
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -1880,14 +2227,28 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 ! We use the distance to the next-next-nearest neighbours as cut-off.
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
-    !a_lat = 4.2010d0
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
+
+    rcut = rnnl(3)
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
+
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
-    xp = b * twelfth / (1.0d0 + exp(acut*(rnnp-rcut)))
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xp = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnp-rcut)))
 
 !-----------------------------------GAMMA--------------------------------------
 ! Gamma enforces the cut-off together with theta (see below)
@@ -2036,8 +2397,8 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
     s_l = sigma_ll + chilp*sigma_lp
     s_p = sigma_pp + chipl*sigma_pl
-    s_l = -log(s_l*twelfth)/betaeta2_l
-    s_p = -log(s_p*twelfth)/betaeta2_p
+    s_l = -log(s_l/dble(b(1)))/betaeta2_l
+    s_p = -log(s_p/dble(b(1)))/betaeta2_p
 
 !-----------------------------DENSITY CALCULATION------------------------------
 ! only for particle at present
@@ -2062,9 +2423,9 @@ subroutine emt_dens_fit(xdata, energy,pdens)
         vref_p = vref_p + rtemp
     end do
 
-    rtemp = 12.0d0 * pars_l(5)
+    rtemp = b(1) * pars_l(5)
     vref_l    =    vref_l*rtemp
-    rtemp = 12.0d0 * pars_p(5)
+    rtemp = b(1) * pars_p(5)
     vref_p    =    vref_p*rtemp
 
 
@@ -2092,7 +2453,9 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l, chipl
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l, chipl
     real(8) :: betas0_p, betaeta2_p, kappadbeta_p, chilp
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1p, igamma2p, igamma1l, igamma2l
@@ -2130,6 +2493,20 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
+   ! geometrical factor for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
+
     ! beta * s0
     betas0_l = beta * pars_l(7)
     betas0_p = beta * pars_p(7)
@@ -2158,15 +2535,36 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
     dchipl(4) = -dchipl(3)              ! d chipl / d sol
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
     rnnp(1) = betas0_p
-    rnnp(2) = rnnp(1) * sqrt2
-    rnnp(3) = rnnp(1) * sqrt3
-
     drnn(1) = beta
-    drnn(2) = drnn(1) * sqrt2
-    drnn(3) = drnn(1) * sqrt3
+
+        select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+            rnnp(2) = rnnp(1) * sqrt2
+            rnnp(3) = rnnp(1) * sqrt3
+            drnn(2) = drnn(1) * sqrt2
+            drnn(3) = drnn(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(3) = rnnp(2) * sqrt2
+            drnn(2) = drnn(1) * 2.d0 * isqrt3
+            drnn(3) = drnn(2) * sqrt2
+
+    end select
+
+
+
+
+
+
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -2176,13 +2574,27 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
 
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4 * rcut / (sqrt3 + 2.0d0)
+    rcut = rnnl(3)
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
+
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
 
-    xl = b * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
-    xp = b * twelfth / (1.0d0 + exp(acut*(rnnp-rcut)))
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xp = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnp-rcut)))
     dxl = -xl*acut*drnn*exp(acut*(rnnl-rcut))/(1.0d0 + exp(acut*(rnnl-rcut)))
     dxp = -xp*acut*drnn*exp(acut*(rnnp-rcut))/(1.0d0 + exp(acut*(rnnp-rcut)))
 
@@ -2493,7 +2905,7 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
     s_l = sigma_ll + chilp*sigma_lp
     rn_ltemp = 1.0d0/(s_l*betaeta2_l)
-    s_l = -log(s_l*twelfth)/betaeta2_l
+    s_l = -log(s_l/dble(b(1)))/betaeta2_l
 
     ! Derivative with respect to l
     ds_l_l(1,:) = -s_l/pars_l(1) &
@@ -2507,7 +2919,7 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
     s_p = sigma_pp + chipl*sigma_pl
     rn_ptemp = 1.0d0 / (s_p*betaeta2_p)
-    s_p = -log(s_p*twelfth)/betaeta2_p
+    s_p = -log(s_p/dble(b(1)))/betaeta2_p
 
     ! Derivative with respect to p
     ds_p_p(1,:) = -s_p/pars_p(1) &
@@ -2557,7 +2969,9 @@ subroutine emt1nn(s)
 
     integer :: i,j
 
-    real(8) :: betas0_l, betaeta2_l, kappadbeta_l
+    integer, dimension(3) :: b
+
+    real(8) :: beta, betas0_l, betaeta2_l, kappadbeta_l
     real(8) :: r, rcut, rr, acut, theta, rtemp, rtemp1
     real(8) :: igamma1l, igamma2l
     real(8) :: V_ll, Ecoh_l, vref_l
@@ -2572,6 +2986,21 @@ subroutine emt1nn(s)
 
 !----------------------VALUES OF FREQUENT USE ---------------------------------
 
+! geometrical factor for metals
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.d0/3.d0)
+
+    end select
+
+
     ! beta * s0
     betas0_l = beta * pars_l(7)
     ! beta * eta2
@@ -2581,8 +3010,20 @@ subroutine emt1nn(s)
 
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
-    rnnl(2) = rnnl(1) * sqrt2
-    rnnl(3) = rnnl(1) * sqrt3
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rnnl(2) = rnnl(1) * sqrt2
+            rnnl(3) = rnnl(1) * sqrt3
+
+        case(1)
+            ! bcc
+            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(3) = rnnl(2) * sqrt2
+
+    end select
 
 !------------------------------------------------------------------------------
 !                                  CUT-OFF
@@ -2592,12 +3033,27 @@ subroutine emt1nn(s)
 ! We only need one cut-off and we choose the one of the lattice atoms since s0
 ! is usually larger for them.
 
-    rcut = betas0_l * sqrt3
-    !rcut = a_lat * sqrt3 * isqrt2
-    rr = 4 * rcut / (sqrt3 + 2.0d0)
+        rcut = rnnl(3)
+
+    select case (structure_key)
+
+        case(0)
+            ! fcc
+            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            b = (/12, 6, 24/)
+
+        case(1)
+            ! bcc
+            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            b = (/8, 6, 12/)
+
+    end select
+
     acut = 9.210240d0/(rr -rcut) ! ln(10000)
 
-    xl = nneighs * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))
+    xl = dble(b)/dble(b(1)) / (1.0d0 + exp(acut*(rnnl-rcut)))
+
+   ! xl = nneighs * twelfth / (1.0d0 + exp(acut*(rnnl-rcut)))   - old version
 
 !-----------------------------------GAMMA--------------------------------------
 ! Gamma enforces the cut-off together with theta (see below)
@@ -2677,7 +3133,7 @@ subroutine emt1nn(s)
         ds_l_l(3,i,:) = ds_l_l(3,i,:)/(betaeta2_l*s_l)
     end do
 
-    s_l = -log(s_l*twelfth)/betaeta2_l
+    s_l = -log(s_l/dble(b(1)))/betaeta2_l
 
 !----------------------EMBEDDED ELECTRON DENSITY-------------------------------
 
@@ -2707,7 +3163,7 @@ subroutine emt1nn(s)
 
     end do
 
-    rtemp = 12.0d0 * pars_l(5)
+    rtemp = b(1) * pars_l(5)
     vref_l    =    vref_l*rtemp
     dvref_l_l = dvref_l_l*rtemp*pars_l(6)
 
@@ -2819,7 +3275,7 @@ subroutine ldfa(s,imass)
     end do
     ! xi in 1/fs
     s%dens = s%dens*convert*imass / hbar
-    
+
     ! For simulated annealing, the Langevin dynamics are used as a heat bath
     ! But using the Au-atomic densities is too inefficient, so in this case
     ! a friction coefficient is set that is of the order of magnitude of

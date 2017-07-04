@@ -56,6 +56,7 @@ module md_init
     character(len=80) :: name_p = 'Elerium'
     character(len=80) :: key_p_pos = 'top'
     character(len=80) :: pes_name = 'emt'
+    character(len=80) :: structure_name = 'fcc'
     character(len=80) :: key_p = 'empty'
     integer :: npars_l ! number of parameters for lattice
     integer :: npars_p = 0
@@ -68,6 +69,9 @@ module md_init
                                 !   1 : nearest-neighbours
                                 !   2 : next-nearest-neighbours
                                 !   3 : nxt-next-nearest-neighbours
+    integer :: structure_key = 0        ! structure type:
+                                        !   0 : fcc
+                                        !   1 : bcc
     integer, dimension(:,:), allocatable :: neigh_l, neigh_p
     real(8) :: mass_l
     real(8) :: mass_p = 1.0d0
@@ -331,6 +335,19 @@ distmima=(/0.0d0,7.0d0/)
                         pes_key = 1
                     case default
                         print *, 'Error: Unknown PES.'
+                        stop ' subroutine: simbox_init()'
+                end select
+
+            case ('structure')
+                read(buffer, *, iostat=ios) structure_name
+                call lower_case(structure_name)
+                select case(structure_name)
+                    case('fcc')
+                        structure_key = 0
+                    case('bcc')
+                        structure_key = 1
+                    case default
+                        print *, 'Error: Unknown structure.'
                         stop ' subroutine: simbox_init()'
                 end select
 
