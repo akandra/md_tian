@@ -16,9 +16,9 @@ module atom_class
     ! Various useful constants
     real(8), parameter          :: sqrt2    = 1.41421356237d0
     real(8), parameter          :: sqrt3    = 1.73205080757d0
-    real(8), parameter          :: sqrt11   = sqrt(11.d0)
+    real(8), parameter          :: sqrt11   = sqrt(11.0d0)
     real(8), parameter          :: isqrt2   = 0.7071067811865d0
-    real(8), parameter          :: isqrt3   = 1.d0/sqrt3
+    real(8), parameter          :: isqrt3   = 1.0d0/sqrt3
     real(8), parameter          :: pi       = 3.14159265359d0
     real(8), parameter          :: kB       = 8.61733238496d-5
     real(8), parameter          :: hbar     = 0.6582119280967d0
@@ -42,7 +42,7 @@ module atom_class
 
     ! Number of nearest, next-nearest and next-next-nearest neighbours
     ! fcc only. MODIFY FOR NON-FCC-METALS
-    integer, dimension(3), parameter   :: nneighs = (/12, 6, 24/)
+    integer, dimension(3), parameter   :: nneighs = (/8, 6, 12/)
 
     ! highest permitted projectile position
     real(8), parameter          :: proj_upgone = 6.1

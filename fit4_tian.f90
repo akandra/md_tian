@@ -328,7 +328,7 @@ subroutine dev2aimddft(Eref, mm)
 !           For comparison between input AIMD and new fit.
 !
 real(8), intent(in) :: Eref, mm
-real(8) :: beta, energy,sumsq = 0.0d0,sum1 = 0.0d0,c44= 0.0d0,c12=0.0d0, c11=0.0d0
+real(8) :: beta, energy,sumsq = 0.0d0,sum1 = 0.0d0,c44= 0.0d0,c12=0.0d0, c11=0.0d0, bm= 0.0d0
 character(len=80) :: pos_l_p, energy_l_p
 integer :: i, q, npts, col = 0
 character(len=1) :: str
@@ -336,6 +336,45 @@ character(len=80) :: nr
 real(8), dimension(:,:,:), allocatable :: d_l3, d_p3, array
 real(8), dimension(:), allocatable :: E_dft1
 !character(len=3), dimension(1) :: names     ! edit #trajs here
+
+
+! ------------ STRUCTURE KEY ----------------------
+
+    select case (structure_key)
+
+        case(0)
+            ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
+            c44 = 3*pars_l(5)*pars_l(6)*(beta*pars_l(1)-pars_l(6))/(8*pi*pars_l(7))*p2GPa                      ! elastic constants fcc considering nearest neighbours only.
+            c11 = (3*pars_l(5)*(beta*pars_l(1)-pars_l(6))*pars_l(6)-pars_l(3)*pars_l(4)**2)&
+                /(12*pi*pars_l(7))*p2GPa
+            c12 = (3*pars_l(5)*(-beta*pars_l(1)+pars_l(6))*pars_l(6)-2*pars_l(3)*pars_l(4)**2)&
+                /(24*pi*pars_l(7))*p2GPa
+
+        case(1)
+            ! beta_bcc = (Pi Sqrt(3))^(1/3)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
+            c44 = -(4.0d0*pars_l(5)*pars_l(6)*(-3.0d0*exp(pars_l(7)*((2.0d0*isqrt3-1.0d0)*beta*pars_l(1)+pars_l(6)))*(2.0d0*sqrt3-2.0d0+beta*pars_l(7)*pars_l(1))&
+                +4.0d0*exp(pars_l(7)*pars_l(6)-1.0d0/3.0d0*(3.0d0-2.0d0*sqrt3)*pars_l(7)*(beta*pars_l(1)+pars_l(6)))*pars_l(7)*(-beta*pars_l(1)+pars_l(6))&
+                +3.0d0*exp(2.0d0*pars_l(7)*pars_l(6)*isqrt3)*(2.0d0*sqrt3+pars_l(7)*pars_l(6)-2.0d0)))&
+                /(sqrt3*(3.0d0+4.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*beta*pars_l(7)*pars_l(1)))*(3.0d0*exp(pars_l(7)*pars_l(6))+4.0d0*exp(2.0d0*pars_l(7)*pars_l(6)*isqrt3))*(pars_l(7)**2)*(beta**3))*p2GPa            ! elastic constants with the normalisation coefficients
+
+            c11 = (-16.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*pars_l(7)*(2.0d0*beta*pars_l(1)+pars_l(6)))*pars_l(3)*pars_l(7)*pars_l(4)**2-9.0d0*pars_l(7)*(8.0d0*pars_l(5)*pars_l(6)*(pars_l(6)-beta*pars_l(1))+pars_l(3)*pars_l(4)**2)&
+                +12.0d0*(exp(2.0d0*pars_l(7)*pars_l(6)*isqrt3-pars_l(7)*pars_l(6))*(pars_l(5)*pars_l(6)*(6.0d0+pars_l(7)*(8.0d0*beta*pars_l(1)+pars_l(6)))-pars_l(3)*pars_l(7)*pars_l(4)**2)&
+                -exp((4.0d0*isqrt3-2.0d0)*beta*pars_l(7)*pars_l(1))*(4.0d0*pars_l(5)*pars_l(6)*(3.0d0*pars_l(7)*pars_l(6)+2.0d0)+pars_l(3)*pars_l(7)*pars_l(4)**2)&
+                + exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*beta*pars_l(7)*pars_l(1))*(pars_l(5)*pars_l(6)*((15.0d0-4.0d0*sqrt3)*beta*pars_l(7)*pars_l(1)-6.0d0+4.0d0*pars_l(7)*pars_l(6)*(sqrt3-6.0d0))-sqrt3*pars_l(3)*pars_l(7)*pars_l(4)**2))&
+                +16.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*pars_l(7)*(beta*pars_l(1)+pars_l(6)))*(pars_l(5)*pars_l(6)*((15.0d0-4.0d0*sqrt3)*beta*pars_l(7)*pars_l(1)+6.0d0+pars_l(7)*pars_l(6)*(4.0d0*sqrt3-6.0d0))-sqrt3*pars_l(3)*pars_l(7)*pars_l(4)**2))&
+                /(sqrt3*(3.0d0+4.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*beta*pars_l(7)*pars_l(1)))**2*(3.0d0+4.0d0*exp(2.0d0*pars_l(7)*pars_l(6)*isqrt3-pars_l(7)*pars_l(6)))*(pars_l(7)**2)*(beta**3))*p2GPa
+
+            c12 =(-16.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*pars_l(7)*(2.0d0*beta*pars_l(1)+pars_l(6)))*pars_l(3)*pars_l(7)*pars_l(4)**2-9.0d0*pars_l(7)*(4.0d0*pars_l(5)*pars_l(6)*(beta*pars_l(1)-pars_l(6))+pars_l(3)*pars_l(4)**2)&
+                +12.0d0*(exp((4.0d0*isqrt3-2.0d0)*beta*pars_l(7)*pars_l(1))*(4.0d0*pars_l(5)*pars_l(6)*(pars_l(6)*pars_l(7)+4.0d0-2.0d0*sqrt3)-pars_l(3)*pars_l(7)*pars_l(4)**2)&
+                + exp(2.0d0*pars_l(7)*pars_l(6)*isqrt3-pars_l(7)*pars_l(6))*(pars_l(5)*pars_l(6)*(6.0d0*(sqrt3-2.0d0)+pars_l(7)*(pars_l(6)-4.0d0*beta*pars_l(1)))-pars_l(3)*pars_l(7)*pars_l(4)**2)&
+                + exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*beta*pars_l(7)*pars_l(1))*(pars_l(5)*pars_l(6)*(-6.0d0*(sqrt3-2.0d0)+pars_l(7)*(beta*pars_l(1)*(3.0d0-4.0d0*sqrt3)+4.0d0*sqrt3*pars_l(6)))-sqrt3*pars_l(3)*pars_l(7)*pars_l(4)**2))&
+                +16.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*pars_l(7)*(beta*pars_l(1)+pars_l(6)))*(pars_l(5)*pars_l(6)*(6.0d0*(sqrt3-2.0d0)+pars_l(7)*(beta*pars_l(1)*(3.0d0-4.0d0*sqrt3)+(4.0d0*sqrt3-6.0d0)*pars_l(6)))-sqrt3*pars_l(3)*pars_l(7)*pars_l(4)**2))&
+                /(sqrt3*(3.0d0+4.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*beta*pars_l(7)*pars_l(1)))**2*(3.0d0+4.0d0*exp(2.0d0*pars_l(7)*pars_l(6)*isqrt3-pars_l(7)*pars_l(6)))*(pars_l(7)**2)*(beta**3))*p2GPa
+    end select
+
+
 
 write(str,'(2I1)') rep(1)
 nr=trim(fit_dir)//'traj'//trim(fitnum)//'_'//str
@@ -370,14 +409,18 @@ close(1)
 sumsq = Sqrt(sum1/col)*1000.d0
 !
 print*,'aimd_rms = ',sumsq, ' meV'
-c44 = 3*pars_l(5)*pars_l(6)*(beta*pars_l(1)-pars_l(6))/(8*pi*pars_l(7))*p2GPa
-c11 = (3*pars_l(5)*(beta*pars_l(1)-pars_l(6))*pars_l(6)-pars_l(3)*pars_l(4)**2)&
-    /(12*pi*pars_l(7))*p2GPa
-c12 = (3*pars_l(5)*(-beta*pars_l(1)+pars_l(6))*pars_l(6)-2*pars_l(3)*pars_l(4)**2)&
-    /(24*pi*pars_l(7))*p2GPa
+!c44 = 3*pars_l(5)*pars_l(6)*(beta*pars_l(1)-pars_l(6))/(8*pi*pars_l(7))*p2GPa
+!c11 = (3*pars_l(5)*(beta*pars_l(1)-pars_l(6))*pars_l(6)-pars_l(3)*pars_l(4)**2)&
+!    /(12*pi*pars_l(7))*p2GPa
+!c12 = (3*pars_l(5)*(-beta*pars_l(1)+pars_l(6))*pars_l(6)-2*pars_l(3)*pars_l(4)**2)&
+!    /(24*pi*pars_l(7))*p2GPa
+bm = c11/3.0d0 + 2.0d0*c12/3.0d0
+
+print *, 'beta =', beta, 'dimensionless'
 print *, 'C44 = ', c44, ' GPa'
 print *, 'C11 = ', c11, ' GPa'
 print *, 'C12 = ', c12, ' GPa'
+print *, 'B = ', bm, ' GPa'
 write(141,'(A6, 17f15.6)') fitnum, c44, mm, sumsq, pars_l(1), pars_l(2), pars_l(3),&
     pars_l(4), pars_l(5), pars_l(6), pars_l(7), pars_p(1), pars_p(2), pars_p(3),&
     pars_p(4), pars_p(5), pars_p(6), pars_p(7)

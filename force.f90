@@ -65,17 +65,17 @@ subroutine emt(slab, teil)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
+
 
     end select
 
 
-
-
+! print *, 'beta', beta
     ! beta * s0
     betas0_l = beta * pars_l(7)
     betas0_p = beta * pars_p(7)
@@ -106,9 +106,9 @@ subroutine emt(slab, teil)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
-            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(2) = rnnp(1) * 2.0d0 * isqrt3
             rnnp(3) = rnnp(2) * sqrt2
 
     end select
@@ -128,12 +128,12 @@ subroutine emt(slab, teil)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
@@ -558,15 +558,15 @@ subroutine emt_e(slab, teil)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
 
     end select
 
-
+! print *, 'beta', beta
     ! beta * s0
     betas0_l = beta * pars_l(7)
     betas0_p = beta * pars_p(7)
@@ -596,9 +596,9 @@ subroutine emt_e(slab, teil)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
-            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(2) = rnnp(1) * 2.0d0 * isqrt3
             rnnp(3) = rnnp(2) * sqrt2
 
     end select
@@ -622,12 +622,12 @@ subroutine emt_e(slab, teil)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
@@ -870,14 +870,14 @@ subroutine emt1(s)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
 
     end select
-
+! print *, 'beta', beta
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -898,7 +898,7 @@ subroutine emt1(s)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
 
     end select
@@ -921,12 +921,12 @@ subroutine emt1(s)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
@@ -1101,15 +1101,15 @@ subroutine emt1_e(s)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
 
     end select
 
-
+print *, 'beta', beta
 
 
     ! beta * s0
@@ -1131,7 +1131,7 @@ subroutine emt1_e(s)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
 
     end select
@@ -1150,12 +1150,12 @@ subroutine emt1_e(s)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
@@ -1294,13 +1294,15 @@ subroutine emt_e_fit(xdata, energy)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
 
     end select
+ !print *, 'beta', beta
+!stop
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -1312,6 +1314,7 @@ subroutine emt_e_fit(xdata, energy)
     kappadbeta_l = pars_l(6) / beta
     kappadbeta_p = pars_p(6) / beta
 
+
     ! 'coupling' parameters between p and l
     chilp = pars_p(2) / pars_l(2) *exp(0.5d0/bohr2ang*(pars_l(7)-pars_p(7)))
     chipl = 1.0d0 / chilp
@@ -1319,6 +1322,8 @@ subroutine emt_e_fit(xdata, energy)
     ! Distances to the nearest, next-nearest and next-next-nearest neighbours
     rnnl(1) = betas0_l
     rnnp(1) = betas0_p
+
+
 
     select case (structure_key)
 
@@ -1331,9 +1336,9 @@ subroutine emt_e_fit(xdata, energy)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
-            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(2) = rnnp(1) * 2.0d0 * isqrt3
             rnnp(3) = rnnp(2) * sqrt2
 
     end select
@@ -1354,12 +1359,12 @@ subroutine emt_e_fit(xdata, energy)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
@@ -1614,13 +1619,16 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
 
     end select
+
+ !print *, 'beta', beta
+ !stop
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -1653,6 +1661,8 @@ subroutine emt_de_fit(xdata, energy, denergy)
     rnnl(1) = betas0_l
     rnnp(1) = betas0_p
     drnn(1) = beta
+!print *, 'beta', beta
+!stop
 
     select case (structure_key)
 
@@ -1667,11 +1677,11 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
-            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(2) = rnnp(1) * 2.0d0 * isqrt3
             rnnp(3) = rnnp(2) * sqrt2
-            drnn(2) = drnn(1) * 2.d0 * isqrt3
+            drnn(2) = drnn(1) * 2.0d0 * isqrt3
             drnn(3) = drnn(2) * sqrt2
 
     end select
@@ -1698,12 +1708,12 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
@@ -1725,14 +1735,14 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
     r3temp1 = xl*exp(- pars_l(1)*r3temp)
     igamma1l = 1.0d0 / sum(r3temp1)
-    dgamma1l = 0.d0
+    dgamma1l = 0.0d0
     dgamma1l(1) = - sum(r3temp*r3temp1)
     dgamma1l(7) = sum(r3temp1*betaeta2_l)+sum(dxl*exp(- pars_l(1)*r3temp)) -&
                   sum(r3temp1*pars_l(1)*drnn)
 
     r3temp1 = xl*exp(-kappadbeta_l * r3temp)
     igamma2l = 1.0d0 / sum(r3temp1)
-    dgamma2l = 0.d0
+    dgamma2l = 0.0d0
     dgamma2l(6) = - sum(r3temp*r3temp1) / beta
     dgamma2l(7) = sum(r3temp1 * pars_l(6))
     dgamma2l(7) = sum(r3temp1*pars_l(6))+sum(dxl*exp(-kappadbeta_l*r3temp)) -&
@@ -1749,7 +1759,7 @@ subroutine emt_de_fit(xdata, energy, denergy)
 
     r3temp1 = xp*exp(-kappadbeta_p * r3temp)
     igamma2p = 1.0d0 / sum(r3temp1)
-    dgamma2p = 0.d0
+    dgamma2p = 0.0d0
     dgamma2p(6) = - sum(r3temp*r3temp1) / beta
     dgamma2p(7) = sum(r3temp1*pars_p(6))+sum(dxp*exp(-kappadbeta_p*r3temp)) -&
                   sum(r3temp1*kappadbeta_p*drnn)
@@ -2173,13 +2183,15 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
 
     end select
+
+! print *, 'beta', beta
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -2210,9 +2222,9 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
-            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(2) = rnnp(1) * 2.0d0 * isqrt3
             rnnp(3) = rnnp(2) * sqrt2
     end select
 
@@ -2234,12 +2246,12 @@ subroutine emt_dens_fit(xdata, energy,pdens)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
@@ -2499,13 +2511,15 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
 
     end select
+
+!   print *, 'beta', beta
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -2551,11 +2565,11 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
-            rnnp(2) = rnnp(1) * 2.d0 * isqrt3
+            rnnp(2) = rnnp(1) * 2.0d0 * isqrt3
             rnnp(3) = rnnp(2) * sqrt2
-            drnn(2) = drnn(1) * 2.d0 * isqrt3
+            drnn(2) = drnn(1) * 2.0d0 * isqrt3
             drnn(3) = drnn(2) * sqrt2
 
     end select
@@ -2580,12 +2594,12 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
@@ -2608,14 +2622,14 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
     r3temp1 = xl*exp(- pars_l(1)*r3temp)
     igamma1l = 1.0d0 / sum(r3temp1)
-    dgamma1l = 0.d0
+    dgamma1l = 0.0d0
     dgamma1l(1) = - sum(r3temp*r3temp1)
     dgamma1l(7) = sum(r3temp1*betaeta2_l)+sum(dxl*exp(- pars_l(1)*r3temp)) -&
                   sum(r3temp1*pars_l(1)*drnn)
 
     r3temp1 = xl*exp(-kappadbeta_l * r3temp)
     igamma2l = 1.0d0 / sum(r3temp1)
-    dgamma2l = 0.d0
+    dgamma2l = 0.0d0
     dgamma2l(6) = - sum(r3temp*r3temp1) / beta
     dgamma2l(7) = sum(r3temp1 * pars_l(6))
     dgamma2l(7) = sum(r3temp1*pars_l(6))+sum(dxl*exp(-kappadbeta_l*r3temp)) -&
@@ -2632,7 +2646,7 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
 
     r3temp1 = xp*exp(-kappadbeta_p * r3temp)
     igamma2p = 1.0d0 / sum(r3temp1)
-    dgamma2p = 0.d0
+    dgamma2p = 0.0d0
     dgamma2p(6) = - sum(r3temp*r3temp1) / beta
     dgamma2p(7) = sum(r3temp1*pars_p(6))+sum(dxp*exp(-kappadbeta_p*r3temp)) -&
                   sum(r3temp1*kappadbeta_p*drnn)
@@ -2937,7 +2951,7 @@ subroutine emt_ddens_fit(xdata, energy, denergy)
     energy = pars_p(2)*exp(rtemp*s_p(5))
 
     denergy(1)  = -energy*(rtemp*ds_p_p(1,5)-beta*s_p(5))
-    denergy(2)  = -energy*(1.d0/pars_p(2)+rtemp*ds_p_p(2,5))
+    denergy(2)  = -energy*(1.0d0/pars_p(2)+rtemp*ds_p_p(2,5))
     denergy(3)  = 0.0d0
     denergy(4)  = 0.0d0
     denergy(5)  = 0.0d0
@@ -2992,14 +3006,14 @@ subroutine emt1nn(s)
 
         case(0)
             ! beta_fcc = (16 Pi / 3)^(1/3)/Sqrt(2)
-            beta = (16.d0 * pi / 3.d0)**(1.d0/3.d0)*isqrt2
+            beta = (16.0d0 * pi / 3.0d0)**(1.0d0/3.0d0)*isqrt2
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
-            beta = (pi*sqrt3)**(1.d0/3.d0)
+            beta = (pi*sqrt3)**(1.0d0/3.0d0)
 
     end select
-
+! print *, 'beta', beta
 
     ! beta * s0
     betas0_l = beta * pars_l(7)
@@ -3020,7 +3034,7 @@ subroutine emt1nn(s)
 
         case(1)
             ! bcc
-            rnnl(2) = rnnl(1) * 2.d0 * isqrt3
+            rnnl(2) = rnnl(1) * 2.0d0 * isqrt3
             rnnl(3) = rnnl(2) * sqrt2
 
     end select
@@ -3039,12 +3053,12 @@ subroutine emt1nn(s)
 
         case(0)
             ! fcc
-            rr = 4.d0 * rcut / (sqrt3 + 2.0d0)
+            rr = 4.0d0 * rcut / (sqrt3 + 2.0d0)
             b = (/12, 6, 24/)
 
         case(1)
             ! bcc
-            rr = 4.d0 * rcut * sqrt3 / (2.d0*sqrt2 + sqrt11)
+            rr = 4.0d0 * rcut * sqrt3 / (2.0d0*sqrt2 + sqrt11)
             b = (/8, 6, 12/)
 
     end select
