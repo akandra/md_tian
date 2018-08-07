@@ -328,7 +328,7 @@ subroutine dev2aimddft(Eref, mm)
 !           For comparison between input AIMD and new fit.
 !
 real(8), intent(in) :: Eref, mm
-real(8) :: beta, energy,sumsq = 0.0d0,sum1 = 0.0d0,c44= 0.0d0,c12=0.0d0, c11=0.0d0, bm= 0.0d0
+real(8) :: beta, energy,sumsq = 0.0d0,sum1 = 0.0d0,c44= 0.0d0,c12=0.0d0, c11=0.0d0, bm= 0.0d0, a_lat
 character(len=80) :: pos_l_p, energy_l_p
 integer :: i, q, npts, col = 0
 character(len=1) :: str
@@ -350,6 +350,7 @@ real(8), dimension(:), allocatable :: E_dft1
                 /(12*pi*pars_l(7))*p2GPa
             c12 = (3*pars_l(5)*(-beta*pars_l(1)+pars_l(6))*pars_l(6)-2*pars_l(3)*pars_l(4)**2)&
                 /(24*pi*pars_l(7))*p2GPa
+            a_lat = sqrt2*pars_l(7)
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
@@ -372,6 +373,8 @@ real(8), dimension(:), allocatable :: E_dft1
                 + exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*beta*pars_l(7)*pars_l(1))*(pars_l(5)*pars_l(6)*(-6.0d0*(sqrt3-2.0d0)+pars_l(7)*(beta*pars_l(1)*(3.0d0-4.0d0*sqrt3)+4.0d0*sqrt3*pars_l(6)))-sqrt3*pars_l(3)*pars_l(7)*pars_l(4)**2))&
                 +16.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*pars_l(7)*(beta*pars_l(1)+pars_l(6)))*(pars_l(5)*pars_l(6)*(6.0d0*(sqrt3-2.0d0)+pars_l(7)*(beta*pars_l(1)*(3.0d0-4.0d0*sqrt3)+(4.0d0*sqrt3-6.0d0)*pars_l(6)))-sqrt3*pars_l(3)*pars_l(7)*pars_l(4)**2))&
                 /(sqrt3*(3.0d0+4.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*beta*pars_l(7)*pars_l(1)))**2*(3.0d0+4.0d0*exp(2.0d0*pars_l(7)*pars_l(6)*isqrt3-pars_l(7)*pars_l(6)))*(pars_l(7)**2)*(beta**3))*p2GPa
+
+            a_lat = 2.*isqrt3*pars_l(7)
     end select
 
 
@@ -421,6 +424,7 @@ print *, 'C44 = ', c44, ' GPa'
 print *, 'C11 = ', c11, ' GPa'
 print *, 'C12 = ', c12, ' GPa'
 print *, 'B = ', bm, ' GPa'
+print *, 'a0 = ', a_lat, ' A'
 write(141,'(A6, 17f15.6)') fitnum, c44, mm, sumsq, pars_l(1), pars_l(2), pars_l(3),&
     pars_l(4), pars_l(5), pars_l(6), pars_l(7), pars_p(1), pars_p(2), pars_p(3),&
     pars_p(4), pars_p(5), pars_p(6), pars_p(7)
