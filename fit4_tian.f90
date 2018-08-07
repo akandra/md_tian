@@ -350,7 +350,7 @@ real(8), dimension(:), allocatable :: E_dft1
                 /(12*pi*pars_l(7))*p2GPa
             c12 = (3*pars_l(5)*(-beta*pars_l(1)+pars_l(6))*pars_l(6)-2*pars_l(3)*pars_l(4)**2)&
                 /(24*pi*pars_l(7))*p2GPa
-            a_lat = sqrt2*pars_l(7)
+            a_lat = sqrt2*pars_l(7)*beta
 
         case(1)
             ! beta_bcc = (Pi Sqrt(3))^(1/3)
@@ -374,7 +374,7 @@ real(8), dimension(:), allocatable :: E_dft1
                 +16.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*pars_l(7)*(beta*pars_l(1)+pars_l(6)))*(pars_l(5)*pars_l(6)*(6.0d0*(sqrt3-2.0d0)+pars_l(7)*(beta*pars_l(1)*(3.0d0-4.0d0*sqrt3)+(4.0d0*sqrt3-6.0d0)*pars_l(6)))-sqrt3*pars_l(3)*pars_l(7)*pars_l(4)**2))&
                 /(sqrt3*(3.0d0+4.0d0*exp(1.0d0/3.0d0*(2.0d0*sqrt3-3.0d0)*beta*pars_l(7)*pars_l(1)))**2*(3.0d0+4.0d0*exp(2.0d0*pars_l(7)*pars_l(6)*isqrt3-pars_l(7)*pars_l(6)))*(pars_l(7)**2)*(beta**3))*p2GPa
 
-            a_lat = 2.*isqrt3*pars_l(7)
+            a_lat = 2.*isqrt3*pars_l(7)*beta
     end select
 
 
